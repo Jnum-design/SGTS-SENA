@@ -1,7 +1,7 @@
 -- ==========================================================
 -- BASE DE DATOS: SGTS (Sistema de Gestion de Tickets de Soporte)
 -- SENA - Ficha 3176597
--- Motor: MySQL 8.x (MySQL Workbench)
+-- Motor: PostgreSQL 16
 --
 -- Incluye:
 --   1. Esquema normalizado (con categorias, calificacion y
@@ -24,53 +24,60 @@
 DROP DATABASE IF EXISTS sgts_db;
 
 CREATE DATABASE sgts_db
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
+    ;
 
-USE sgts_db;
 
-SET NAMES utf8mb4;
+
+
 
 -- ==========================================================
+
+-- ==========================================================
+-- CREACIÓN DE TIPOS ENUM PARA POSTGRESQL
+-- ==========================================================
+CREATE TYPE rol_empleado AS ENUM ('usuario', 'tecnico', 'administrador');
+CREATE TYPE prioridad_ticket AS ENUM ('Crítica', 'Alta', 'Media', 'Baja');
+CREATE TYPE estado_ticket AS ENUM ('Abierto', 'En proceso', 'Resuelto', 'Cerrado');
+
 -- 1. TABLAS MAESTRAS (SIN DEPENDENCIAS)
 -- ==========================================================
 
 CREATE TABLE Departamento (
-    id_departamento INT AUTO_INCREMENT PRIMARY KEY,
+    id_departamento INT SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     descripcion TEXT
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE SLA (
-    id_sla INT AUTO_INCREMENT PRIMARY KEY,
+    id_sla INT SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
-    tiempo_respuesta INT NOT NULL COMMENT 'Tiempo expresado en minutos',
-    tiempo_solucion INT NOT NULL COMMENT 'Tiempo expresado en minutos',
+    tiempo_respuesta INT NOT NULL,
+    tiempo_solucion INT NOT NULL,
     descripcion TEXT
-) ENGINE=InnoDB;
+);
 
 -- NUEVA: categorias para clasificar los tickets
 CREATE TABLE Categoria (
-    id_categoria INT AUTO_INCREMENT PRIMARY KEY,
+    id_categoria INT SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE,
     descripcion TEXT
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE Red (
-    id_red INT AUTO_INCREMENT PRIMARY KEY,
+    id_red INT SERIAL PRIMARY KEY,
     nombre_segmento VARCHAR(100) NOT NULL,
     direccion_ip VARCHAR(50),
     ubicacion VARCHAR(100),
     estado VARCHAR(50)
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE Software (
-    id_software INT AUTO_INCREMENT PRIMARY KEY,
+    id_software INT SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     version VARCHAR(50),
     fabricante VARCHAR(100),
     tipo_licencia VARCHAR(100)
-) ENGINE=InnoDB;
+);
 
 -- ==========================================================
 -- 2. TABLAS CON UNA DEPENDENCIA GENERAL
@@ -78,20 +85,20 @@ CREATE TABLE Software (
 
 -- Usuario, tecnico y administrador se unifican en Empleado
 CREATE TABLE Empleado (
-    id_empleado INT AUTO_INCREMENT PRIMARY KEY,
+    id_empleado INT SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     correo VARCHAR(150) UNIQUE NOT NULL,
     telefono VARCHAR(20),
     cargo VARCHAR(100),
-    rol ENUM('usuario', 'tecnico', 'administrador') NOT NULL,
-    contrasena VARCHAR(255) NOT NULL COMMENT 'Hash bcrypt, nunca texto plano',
+    rol rol_empleado NOT NULL,
+    contrasena VARCHAR(255) NOT NULL,
     estado BOOLEAN NOT NULL DEFAULT TRUE,
     id_departamento INT NOT NULL,
 
     FOREIGN KEY (id_departamento)
         REFERENCES Departamento(id_departamento) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 -- Sub-entidad 1:1 para los empleados con rol 'tecnico'
 CREATE TABLE Tecnico_Detalle (
@@ -100,24 +107,22 @@ CREATE TABLE Tecnico_Detalle (
 
     FOREIGN KEY (id_empleado)
         REFERENCES Empleado(id_empleado) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 -- NUEVA: codigos de 6 digitos para recuperar la contrasena
 CREATE TABLE Codigo_Recuperacion (
-    id_codigo INT AUTO_INCREMENT PRIMARY KEY,
+    id_codigo INT SERIAL PRIMARY KEY,
     id_empleado INT NOT NULL,
     codigo VARCHAR(6) NOT NULL,
-    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_expiracion DATETIME NOT NULL,
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_expiracion TIMESTAMP NOT NULL,
     usado BOOLEAN NOT NULL DEFAULT FALSE,
-
-    INDEX idx_codigo_empleado (id_empleado, usado),
     FOREIGN KEY (id_empleado)
         REFERENCES Empleado(id_empleado) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE Equipo (
-    id_equipo INT AUTO_INCREMENT PRIMARY KEY,
+    id_equipo INT SERIAL PRIMARY KEY,
     codigo_inventario VARCHAR(50) UNIQUE NOT NULL,
     nombre_equipo VARCHAR(100),
     marca VARCHAR(100),
@@ -129,11 +134,11 @@ CREATE TABLE Equipo (
 
     FOREIGN KEY (id_departamento)
         REFERENCES Departamento(id_departamento) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 -- La fecha de vencimiento reside unicamente aqui
 CREATE TABLE Licencia (
-    id_licencia INT AUTO_INCREMENT PRIMARY KEY,
+    id_licencia INT SERIAL PRIMARY KEY,
     clave_licencia VARCHAR(255) NOT NULL,
     fecha_inicio DATE,
     fecha_vencimiento DATE,
@@ -142,19 +147,19 @@ CREATE TABLE Licencia (
 
     FOREIGN KEY (id_software)
         REFERENCES Software(id_software) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE Incidente (
-    id_incidente INT AUTO_INCREMENT PRIMARY KEY,
+    id_incidente INT SERIAL PRIMARY KEY,
     descripcion TEXT NOT NULL,
-    fecha_reporte DATETIME NOT NULL,
+    fecha_reporte TIMESTAMP NOT NULL,
     nivel_criticidad VARCHAR(50),
     estado VARCHAR(50),
     id_red INT NOT NULL,
 
     FOREIGN KEY (id_red)
         REFERENCES Red(id_red) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 -- ==========================================================
 -- 3. GESTION OPERACIONAL (TICKETS Y SEGUIMIENTOS)
@@ -163,23 +168,20 @@ CREATE TABLE Incidente (
 -- CAMBIOS: id_categoria, calificacion (1 a 5) y comentario_calificacion;
 -- prioridad y estado pasan a ENUM para mantener valores consistentes
 CREATE TABLE Ticket (
-    id_ticket INT AUTO_INCREMENT PRIMARY KEY,
-    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_ticket INT SERIAL PRIMARY KEY,
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     asunto VARCHAR(200) NOT NULL,
     descripcion TEXT,
-    prioridad ENUM('Crítica', 'Alta', 'Media', 'Baja') NOT NULL DEFAULT 'Media',
-    estado ENUM('Abierto', 'En proceso', 'Resuelto', 'Cerrado') NOT NULL DEFAULT 'Abierto',
-    fecha_cierre DATETIME,
-    calificacion TINYINT,
+    prioridad prioridad_ticket NOT NULL DEFAULT 'Media',
+    estado estado_ticket NOT NULL DEFAULT 'Abierto',
+    fecha_cierre TIMESTAMP,
+    calificacion SMALLINT,
     comentario_calificacion TEXT,
     id_categoria INT NOT NULL,
     id_empleado_reporta INT NOT NULL,
     id_empleado_tecnico INT,
     id_sla INT NOT NULL,
     id_incidente INT,
-
-    INDEX idx_ticket_estado (estado),
-    INDEX idx_ticket_prioridad (prioridad),
     CONSTRAINT chk_ticket_calificacion CHECK (calificacion IS NULL OR calificacion BETWEEN 1 AND 5),
 
     FOREIGN KEY (id_categoria) REFERENCES Categoria(id_categoria) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -187,11 +189,11 @@ CREATE TABLE Ticket (
     FOREIGN KEY (id_empleado_tecnico) REFERENCES Empleado(id_empleado) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (id_sla) REFERENCES SLA(id_sla) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (id_incidente) REFERENCES Incidente(id_incidente) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE Seguimiento (
-    id_seguimiento INT AUTO_INCREMENT PRIMARY KEY,
-    fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_seguimiento INT SERIAL PRIMARY KEY,
+    fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     comentario TEXT NOT NULL,
     estado_actual VARCHAR(50),
     id_ticket INT NOT NULL,
@@ -199,21 +201,21 @@ CREATE TABLE Seguimiento (
 
     FOREIGN KEY (id_ticket) REFERENCES Ticket(id_ticket) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (id_empleado_autor) REFERENCES Empleado(id_empleado) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE Auditoria (
-    id_auditoria INT AUTO_INCREMENT PRIMARY KEY,
-    fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_auditoria INT SERIAL PRIMARY KEY,
+    fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     accion_realizada TEXT NOT NULL,
     id_ticket INT NOT NULL,
     id_empleado_responsable INT NOT NULL,
 
     FOREIGN KEY (id_ticket) REFERENCES Ticket(id_ticket) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (id_empleado_responsable) REFERENCES Empleado(id_empleado) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 CREATE TABLE Mantenimiento (
-    id_mantenimiento INT AUTO_INCREMENT PRIMARY KEY,
+    id_mantenimiento INT SERIAL PRIMARY KEY,
     tipo_mantenimiento VARCHAR(50) NOT NULL,
     fecha_programada DATE NOT NULL,
     fecha_realizacion DATE,
@@ -224,7 +226,7 @@ CREATE TABLE Mantenimiento (
 
     FOREIGN KEY (id_equipo) REFERENCES Equipo(id_equipo) ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (id_empleado_tecnico) REFERENCES Empleado(id_empleado) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 -- ==========================================================
 -- 4. TABLAS ASOCIATIVAS (RESOLUCION MUCHOS A MUCHOS N:M)
@@ -238,7 +240,7 @@ CREATE TABLE Equipo_Software (
     PRIMARY KEY (id_equipo, id_software),
     FOREIGN KEY (id_equipo) REFERENCES Equipo(id_equipo) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (id_software) REFERENCES Software(id_software) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
 
 -- Un ticket puede afectar a uno o varios equipos
 CREATE TABLE Ticket_Equipo (
@@ -248,7 +250,13 @@ CREATE TABLE Ticket_Equipo (
     PRIMARY KEY (id_ticket, id_equipo),
     FOREIGN KEY (id_ticket) REFERENCES Ticket(id_ticket) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (id_equipo) REFERENCES Equipo(id_equipo) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB;
+);
+
+
+-- Índices para mejorar rendimiento (Sintaxis PostgreSQL)
+CREATE INDEX idx_codigo_empleado ON Codigo_Recuperacion (id_empleado, usado);
+CREATE INDEX idx_ticket_estado ON Ticket (estado);
+CREATE INDEX idx_ticket_prioridad ON Ticket (prioridad);
 
 -- ==========================================================
 -- 5. DATOS INICIALES DE PRUEBA (SEED)
