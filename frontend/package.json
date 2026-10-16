@@ -1,9 +1,0 @@
-{
-  "name": "sgts-frontend-workspace",
-  "private": true,
-  "scripts": {
-    "dev": "npm --prefix ./sgts-frontend run dev",
-    "build": "npm --prefix ./sgts-frontend run build",
-    "preview": "npm --prefix ./sgts-frontend run preview"
-  }
-}
