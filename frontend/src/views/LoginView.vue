@@ -26,7 +26,7 @@ async function entrar() {
 </script>
 
 <template>
-  <AuthCard titulo="Inicio de sesión">
+  <AuthCard titulo="Inicio de sesión" panorama>
     <form class="space-y-4" @submit.prevent="entrar">
       <div>
         <label class="label">Correo electrónico</label>

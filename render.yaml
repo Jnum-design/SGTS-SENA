@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: sgts-sena
+    runtime: python
+    plan: free
+    region: ohio
+    buildCommand: pip install -r backend/requirements.txt && npm ci --prefix frontend && npm run build --prefix frontend
+    startCommand: cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEV_SHOW_RECOVERY_CODE
+        value: "false"

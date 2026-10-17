@@ -52,14 +52,14 @@ async function reenviar() {
 </script>
 
 <template>
-  <AuthCard titulo="Verifica tu correo" :subtitulo="`Ingresa el código de 6 dígitos que enviamos a ${rec.correo}`">
+  <AuthCard titulo="Verifica tu correo" :subtitulo="`Ingresa el código de 6 dígitos que enviamos a ${rec.correo}`" panorama>
     <div v-if="rec.codigoDev" class="mb-4 rounded border border-yellow-300 bg-yellow-50 p-2 text-center text-xs text-yellow-800">
       Modo desarrollo (sin envío de correo). Tu código es <b class="text-base tracking-widest">{{ rec.codigoDev }}</b>
     </div>
     <form @submit.prevent="verificar">
-      <div class="flex justify-center gap-2" @paste="pegar">
+      <div class="flex justify-center gap-1.5 sm:gap-2" @paste="pegar">
         <input v-for="(d, i) in digitos" :key="i" :ref="(el) => (refs[i] = el)" :value="d" inputmode="numeric" maxlength="1"
-               class="h-12 w-10 rounded-md border border-gray-300 text-center text-xl font-bold focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+               class="h-11 w-full min-w-0 max-w-10 flex-1 rounded-md border border-gray-300 text-center text-xl font-bold focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand sm:h-12"
                @input="escribir(i, $event)" @keydown="atras(i, $event)" />
       </div>
       <p v-if="error" class="mt-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{{ error }}</p>

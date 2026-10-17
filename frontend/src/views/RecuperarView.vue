@@ -27,7 +27,7 @@ async function enviar() {
 </script>
 
 <template>
-  <AuthCard titulo="¿Olvidaste tu contraseña?" subtitulo="Ingresa tu correo institucional y te enviaremos un código de verificación para restablecerla.">
+  <AuthCard titulo="¿Olvidaste tu contraseña?" subtitulo="Ingresa tu correo institucional y te enviaremos un código de verificación para restablecerla." panorama>
     <form class="space-y-4" @submit.prevent="enviar">
       <div>
         <label class="label">Correo electrónico</label>
