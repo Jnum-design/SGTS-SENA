@@ -28,8 +28,11 @@ watch(() => pag.value.page, cargar)
 onMounted(cargar)
 
 const columnas = [
-  { key: 'fecha', label: 'Fecha' }, { key: 'codigo', label: 'Ticket' },
-  { key: 'accion', label: 'Acción realizada' }, { key: 'responsable', label: 'Responsable' },
+  { key: 'fecha', label: 'Fecha' },
+  { key: 'codigo', label: 'Ticket' },
+  { key: 'accion', label: 'Acción realizada' },
+  { key: 'responsable', label: 'Responsable' },
+  { key: 'ver', label: '' },
 ]
 </script>
 
@@ -44,8 +47,19 @@ const columnas = [
     </div>
     <DataTable :columns="columnas" :rows="filas" row-key="id_auditoria" :loading="cargando" empty="No hay eventos registrados">
       <template #cell-fecha="{ row }"><span class="whitespace-nowrap text-xs">{{ fmtFecha(row.fecha) }}</span></template>
-      <template #cell-codigo="{ row }"><RouterLink :to="`/tickets/${row.id_ticket}`" class="font-semibold text-brand hover:underline">{{ row.codigo }}</RouterLink></template>
-      <template #cell-responsable="{ row }">{{ row.responsable }} <span class="text-xs text-gray-400">({{ ROL_LABEL[row.rol] }})</span></template>
+      <template #cell-codigo="{ row }">
+        <RouterLink v-if="row.id_ticket" :to="`/tickets/${row.id_ticket}`" class="inline-flex items-center gap-1 font-bold text-brand hover:underline" title="Ver detalle del ticket">
+          <span>{{ row.codigo }}</span>
+        </RouterLink>
+        <span v-else class="text-xs text-gray-400">—</span>
+      </template>
+      <template #cell-responsable="{ row }">{{ row.responsable }} <span class="text-xs text-gray-400">({{ ROL_LABEL[row.rol] || row.rol }})</span></template>
+      <template #cell-ver="{ row }">
+        <RouterLink v-if="row.id_ticket" :to="`/tickets/${row.id_ticket}`" class="inline-flex items-center gap-1 rounded bg-gray-50 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-brand/10 hover:text-brand" title="Ver detalle del ticket">
+          <Icon name="eye" :size="15" />
+          <span>Ver ticket</span>
+        </RouterLink>
+      </template>
     </DataTable>
     <Pagination v-model:page="pag.page" :pages="pag.pages" :total="pag.total" />
   </section>

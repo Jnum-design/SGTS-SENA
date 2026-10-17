@@ -14,18 +14,30 @@ const routes = [
     redirect: '/menu',
     children: [
       { path: 'menu', name: 'menu', component: () => import('@/views/DashboardView.vue'), meta: { title: 'Menú' } },
-      { path: 'mis-tickets', name: 'mis-tickets', component: () => import('@/views/TicketsView.vue'),
-        meta: { title: 'Mis Tickets', roles: ['usuario'] } },
-      { path: 'crear-ticket', name: 'crear-ticket', component: () => import('@/views/CrearTicketView.vue'),
-        meta: { title: 'Crear Ticket', roles: ['usuario'] } },
-      { path: 'tickets', name: 'tickets', component: () => import('@/views/TicketsView.vue'),
-        meta: { title: 'Tickets', roles: ['tecnico', 'administrador'] } },
-      { path: 'tickets/:id', name: 'ticket-detalle', component: () => import('@/views/TicketDetalleView.vue'),
-        meta: { title: 'Detalle del ticket' } },
-      { path: 'empleados', name: 'empleados', component: () => import('@/views/EmpleadosView.vue'),
-        meta: { title: 'Empleados', roles: ['administrador'] } },
-      { path: 'auditoria', name: 'auditoria', component: () => import('@/views/AuditoriaView.vue'),
-        meta: { title: 'Auditoría', roles: ['administrador'] } },
+      {
+        path: 'mis-tickets', name: 'mis-tickets', component: () => import('@/views/TicketsView.vue'),
+        meta: { title: 'Mis Tickets', roles: ['usuario'] }
+      },
+      {
+        path: 'crear-ticket', name: 'crear-ticket', component: () => import('@/views/CrearTicketView.vue'),
+        meta: { title: 'Crear Ticket', roles: ['usuario'] }
+      },
+      {
+        path: 'tickets', name: 'tickets', component: () => import('@/views/TicketsView.vue'),
+        meta: { title: 'Tickets', roles: ['tecnico', 'administrador'] }
+      },
+      {
+        path: 'tickets/:id', name: 'ticket-detalle', component: () => import('@/views/TicketDetalleView.vue'),
+        meta: { title: 'Detalle del ticket' }
+      },
+      {
+        path: 'empleados', name: 'empleados', component: () => import('@/views/EmpleadosView.vue'),
+        meta: { title: 'Empleados', roles: ['administrador'] }
+      },
+      {
+        path: 'auditoria', name: 'auditoria', component: () => import('@/views/AuditoriaView.vue'),
+        meta: { title: 'Auditoría', roles: ['administrador'] }
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/menu' },
