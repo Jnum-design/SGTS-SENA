@@ -1,0 +1,36 @@
+{
+  "info": {
+    "name": "SGTS API Tests - Mi\u00e9rcoles",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:8000/auth/login",
+          "host": [
+            "http://localhost:8000"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"correo\": \"admin@sgts.local\", \"contrasena\": \"Sgts2026*\"}"
+        }
+      }
+    },
+    {
+      "name": "Tickets - Crear",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:8000/tickets/",
+          "host": [
+            "http://localhost:8000"
+          ]
+        }
+      }
+    }
+  ]
+}
